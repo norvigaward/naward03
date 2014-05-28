@@ -8,16 +8,17 @@ raw = LOAD '/export/scratch2/hannes/warcs/CC-MAIN-20131218055411-00062-ip-10-33-
 USING org.muehleisen.hannes.naward2014.WarcLoadFunc()
 AS (url:chararray, ip:chararray, length:long, headers:chararray, content:chararray);
 
-a = LIMIT raw 10;
-dump a;
+a = LIMIT raw 10000;
 
--- x = FOREACH a GENERATE url, 
--- 	org.muehleisen.hannes.naward2014.PornTagFinder(content) as pornheaderflag, 
--- 	org.muehleisen.hannes.naward2014.TokenizeStemStopfilter(content) AS terms;
+x = FOREACH a GENERATE url, 
+	org.muehleisen.hannes.naward2014.PornTagFinder(content) as headerpornflag, 
+	org.muehleisen.hannes.naward2014.IpGeoLocation(ip) as iplocation,
+	org.muehleisen.hannes.naward2014.BlacklistDomainFinder(url) as domainpornflag;--,
+	--org.muehleisen.hannes.naward2014.TokenizeStemStopfilter(content) AS terms;
 
--- p = FILTER x BY pornheaderflag == true;
+p = FILTER x BY headerpornflag == true || domainpornflag = true;
 
--- DUMP x;
+DUMP p;
 
 -- 
 
