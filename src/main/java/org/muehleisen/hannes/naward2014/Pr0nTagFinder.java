@@ -9,7 +9,7 @@ import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 
-public class PornTagFinder extends EvalFunc<Boolean> {
+public class Pr0nTagFinder extends EvalFunc<Boolean> {
 	private static final Pattern ratingRegex = Pattern.compile(
 			"RTA-5042-1996-1400-1577-RTA", Pattern.CASE_INSENSITIVE);
 
