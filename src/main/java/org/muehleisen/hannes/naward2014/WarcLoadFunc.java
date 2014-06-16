@@ -77,10 +77,11 @@ public class WarcLoadFunc extends FileInputLoadFunc implements LoadMetadata {
 		ArchiveRecord record = null;
 		String contentType = null;
 		String headers[] = null;
-
 		do {
 			try {
-				this.reader.nextKeyValue();
+				if (!this.reader.nextKeyValue()) {
+					return null;
+				}
 				WritableArchiveRecord value = this.reader.getCurrentValue();
 				record = value.getRecord();
 			} catch (InterruptedException e) {

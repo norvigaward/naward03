@@ -18,7 +18,7 @@ import com.google.common.net.InternetDomainName;
 public class BlacklistDomainFinder extends EvalFunc<Boolean> {
 	private static final Set<String> baddomains = new HashSet<String>();
 
-	static String getPld(String domain) {
+	public static String getPld(String domain) {
 		InternetDomainName idn = InternetDomainName.from(domain);
 		while (!idn.isTopPrivateDomain()) {
 			idn = idn.parent();
@@ -76,4 +76,5 @@ public class BlacklistDomainFinder extends EvalFunc<Boolean> {
 	public Schema outputSchema(Schema input) {
 		return new Schema(new Schema.FieldSchema(null, DataType.BOOLEAN));
 	}
+
 }

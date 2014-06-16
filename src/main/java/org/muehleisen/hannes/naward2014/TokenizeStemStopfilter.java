@@ -11,6 +11,8 @@ import java.util.Set;
 
 import org.apache.pig.EvalFunc;
 import org.apache.pig.PigWarning;
+import org.apache.pig.data.BagFactory;
+import org.apache.pig.data.DataBag;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
@@ -21,11 +23,14 @@ import org.terrier.indexing.TaggedDocument;
 import org.terrier.indexing.tokenisation.EnglishTokeniser;
 import org.terrier.terms.PorterStemmer;
 
-public class TokenizeStemStopfilter extends EvalFunc<Tuple> {
+public class TokenizeStemStopfilter extends EvalFunc<DataBag> {
 
+	private final static BagFactory bagFactory = BagFactory.getInstance();
 	private final static TupleFactory tupleFactory = TupleFactory.getInstance();
+
 	private PorterStemmer stemmer = new PorterStemmer();
 	private final static Set<String> stopwords = new HashSet<String>();
+	private static final int MAXLEN = 100000;
 	static {
 		// first load stopword list (lifted from Terrier 3.5.0)
 		BufferedReader rdr = new BufferedReader(new InputStreamReader(
@@ -41,11 +46,16 @@ public class TokenizeStemStopfilter extends EvalFunc<Tuple> {
 	}
 
 	@Override
-	public Tuple exec(Tuple input) throws IOException {
+	public DataBag exec(Tuple input) throws IOException {
 		if (input == null || input.size() < 1)
 			return null;
 		try {
 			String content = (String) input.get(0);
+
+			/*
+			content = content.substring(0, Math.min(content.length(), MAXLEN));
+            String contentPlain = content.replaceAll("\\<.*?\\>", "");
+            */
 
 			String contentPlain = new HtmlToPlainText().getPlainText(Jsoup
 					.parse(content));
@@ -61,7 +71,7 @@ public class TokenizeStemStopfilter extends EvalFunc<Tuple> {
 				if (term == null) {
 					continue;
 				}
-				if (term.length() < 3) {
+				if (term.length() < 3 || term.length() > 10) {
 					continue;
 				}
 				term = stemmer.stem(term);
@@ -70,8 +80,14 @@ public class TokenizeStemStopfilter extends EvalFunc<Tuple> {
 				}
 				terms.add(term);
 			}
-			return tupleFactory.newTuple(terms);
-
+			
+			DataBag db = bagFactory.newDefaultBag();
+			for (String t : terms) {
+				Tuple tp = tupleFactory.newTuple(1);
+				tp.set(0, t);
+				db.add(tp);
+			}
+			return db;
 		} catch (Exception e) {
 			warn(e.getMessage(), PigWarning.UDF_WARNING_1);
 		}
@@ -80,6 +96,6 @@ public class TokenizeStemStopfilter extends EvalFunc<Tuple> {
 
 	@Override
 	public Schema outputSchema(Schema input) {
-		return new Schema(new Schema.FieldSchema(null, DataType.TUPLE));
+		return new Schema(new Schema.FieldSchema(null, DataType.BAG));
 	}
 }

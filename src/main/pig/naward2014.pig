@@ -1,26 +1,62 @@
 REGISTER '/export/scratch2/hannes/naward03/target/naward2014-0.0.1-SNAPSHOT.jar'; 
+REGISTER '/export/scratch2/hannes/naward03/lib/babel2012-1.0-SNAPSHOT.jar';
 
 SET default_parallel 40;
 SET mapred.max.map.failures.percent 10;
 SET pig.temp.dir '/export/scratch2/hannes/warcs/tmp/';
 SET hadoop.tmp.dir '/export/scratch2/hannes/warcs/tmp/';
 
+-- raw = LOAD '/export/scratch2/hannes/warcs/CC-MAIN-20131218055411-00062-ip-10-33-133-15.ec2.internal.warc.gz' 
+-- --raw = LOAD '/export/scratch2/hannes/warcs/IAH-20080430204825-00000-blackbook.warc.gz' 
+-- USING org.muehleisen.hannes.naward2014.WarcLoadFunc()
+-- AS (url:chararray, ip:chararray, length:long, headers:chararray, content:chararray);
+-- rawsm = FILTER raw BY length < 1048576;
 
-raw = LOAD '/export/scratch2/hannes/warcs/CC-MAIN-20131218055411-00062-ip-10-33-133-15.ec2.internal.warc.gz' 
-USING org.muehleisen.hannes.naward2014.WarcLoadFunc()
-AS (url:chararray, ip:chararray, length:long, headers:chararray, content:chararray);
+-- udfout = FOREACH rawsm GENERATE url, 
+-- 	org.muehleisen.hannes.naward2014.Pr0nTagFinder(content) as headerpr0nflag, 
+-- 	org.muehleisen.hannes.naward2014.BlacklistDomainFinder(url) as domainpr0nflag,
+-- 	org.muehleisen.hannes.naward2014.IpGeoLocation(ip) as iplocation,
+-- 	org.muehleisen.hannes.naward2014.ccTldFinder(ip) as tldlocation,
+-- 	UPPER(nl.cwi.ins1.norvigaward.LangGuesser(content)) as language,
+-- 	org.muehleisen.hannes.naward2014.TokenizeStemStopfilter(content) AS terms;
 
-rawsm = FILTER raw BY length < 1048576;
-a = LIMIT rawsm 10000;
+-- STORE udfout INTO '/export/scratch2/hannes/warcs/transformed' USING BinStorage();
 
-x = FOREACH a GENERATE url, 
-	org.muehleisen.hannes.naward2014.Pr0nTagFinder(content) as headerpr0nflag, 
-	org.muehleisen.hannes.naward2014.IpGeoLocation(ip) as iplocation,
-	org.muehleisen.hannes.naward2014.BlacklistDomainFinder(url) as domainpr0nflag;--,
-	--org.muehleisen.hannes.naward2014.TokenizeStemStopfilter(content) AS terms;
+udfout = LOAD '/export/scratch2/hannes/warcs/transformed' USING BinStorage() AS (url,headerpr0nflag,domainpr0nflag,iplocation,tldlocation,language,
+	terms);
 
-p = FILTER x BY headerpr0nflag == true;
-DUMP p;
+training = SAMPLE udfout 0.1;
+
+termstraining = FOREACH training GENERATE headerpr0nflag as pr0nflag, FLATTEN(terms) AS term;
+by_flag_term = GROUP termstraining BY (pr0nflag, term);
+
+gres = FOREACH by_flag_term GENERATE
+    FLATTEN(group) AS (pr0nflag, term),
+    COUNT(termstraining) AS term_count, LOG(COUNT(termstraining)) as term_count_log;
+grest = FILTER gres BY term_count > 10 AND pr0nflag;
+--gresto = ORDER grest BY term_count DESC;
+
+DUMP grest;
+
+
+
+
+--SPLIT udfout INTO pr0no IF (headerpr0nflag OR domainpr0nflag), clean IF NOT (headerpr0nflag AND domainpr0nflag);
+
+--pr0no = FILTER udfout BY headerpr0nflag AND domainpr0nflag;
+--clean = FILTER udfout BY NOT (headerpr0nflag OR domainpr0nflag);
+
+--pr0nosample = SAMPLE pr0no 0.01;
+--cleansample = SAMPLE clean 0.01;
+
+
+
+--illustrate pr0nosample;
+
+--STORE x INTO '/export/scratch2/hannes/warcs/results';
+
+--p = FILTER x BY headerpr0nflag == true;
+--DUMP p;
 --STORE x INTO '/export/scratch2/hannes/warcs/results';
 
 -- 
