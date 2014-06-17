@@ -73,5 +73,23 @@
 			<version>17.0</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.apache.mahout</groupId>
+			<artifactId>mahout-core</artifactId>
+			<version>0.9</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.mahout</groupId>
+			<artifactId>mahout-math</artifactId>
+			<version>0.9</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.twitter.elephantbird</groupId>
+			<artifactId>elephant-bird-pig</artifactId>
+			<version>4.6rc1</version>
+		</dependency>
+
+
 	</dependencies>
 </project>

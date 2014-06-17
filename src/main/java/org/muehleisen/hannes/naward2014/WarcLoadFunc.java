@@ -29,6 +29,8 @@ import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 import org.archive.io.ArchiveRecord;
 import org.archive.io.ArchiveRecordHeader;
+import org.jsoup.Jsoup;
+import org.jsoup.examples.HtmlToPlainText;
 
 import uk.bl.wa.hadoop.WARCRecordUtils;
 import uk.bl.wa.hadoop.WritableArchiveRecord;
@@ -119,13 +121,14 @@ public class WarcLoadFunc extends FileInputLoadFunc implements LoadMetadata {
 		String content = IOUtils.toString(new InputStreamReader(WARCRecordUtils
 				.getPayload(record), cs));
 
-		Tuple t = TupleFactory.getInstance().newTuple(5);
+		Tuple t = TupleFactory.getInstance().newTuple(7);
 		t.set(0, header.getUrl());
 		t.set(1, header.getHeaderValue("WARC-IP-Address"));
-		t.set(2, header.getLength());
-		t.set(3, StringUtils.join(headers, "\n"));
-		t.set(4, content);
-
+		t.set(2, header.getHeaderValue("WARC-Record-ID"));
+		t.set(3, header.getLength());
+		t.set(4, StringUtils.join(headers, "\n"));
+		t.set(5, content);
+		t.set(6, new HtmlToPlainText().getPlainText(Jsoup.parse(content)));
 		return t;
 
 	}
@@ -161,6 +164,10 @@ public class WarcLoadFunc extends FileInputLoadFunc implements LoadMetadata {
 		rs.setType(DataType.CHARARRAY);
 		fields.add(rs);
 		rs = new ResourceFieldSchema();
+		rs.setName("recordid");
+		rs.setType(DataType.CHARARRAY);
+		fields.add(rs);
+		rs = new ResourceFieldSchema();
 		rs.setName("length");
 		rs.setType(DataType.LONG);
 		fields.add(rs);
@@ -169,7 +176,11 @@ public class WarcLoadFunc extends FileInputLoadFunc implements LoadMetadata {
 		rs.setType(DataType.CHARARRAY);
 		fields.add(rs);
 		rs = new ResourceFieldSchema();
-		rs.setName("content");
+		rs.setName("html");
+		rs.setType(DataType.CHARARRAY);
+		fields.add(rs);
+		rs = new ResourceFieldSchema();
+		rs.setName("plaintext");
 		rs.setType(DataType.CHARARRAY);
 		fields.add(rs);
 		ResourceSchema schema = new ResourceSchema();
