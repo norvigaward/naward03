@@ -1,5 +1,6 @@
 #!/bin/sh
 set -x
+cp target/naward2014-0.0.1-SNAPSHOT.jar lib
 export MAHOUT_LOCAL=true 
 export PIG_HEAPSIZE=14000
 OUTDIR=/export/scratch2/hannes/warcs/out
