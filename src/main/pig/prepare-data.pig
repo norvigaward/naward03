@@ -7,10 +7,9 @@ raw = LOAD '$INPUT'
 USING org.muehleisen.hannes.naward2014.WarcLoadFunc()
 AS (url:chararray, ip:chararray, recordid:chararray, length:long, headers:chararray, content:chararray, plaintext:chararray);
 
-udfout = FOREACH raw GENERATE recordid, url, 
+udfout = FOREACH raw GENERATE recordid, url, ip,
 org.muehleisen.hannes.naward2014.Pr0nTagFinder(content) as headerpr0nflag, 
 org.muehleisen.hannes.naward2014.BlacklistDomainFinder(url) as domainpr0nflag,
-org.muehleisen.hannes.naward2014.CountryBlackMagic(ip,url,content) as country,
 plaintext;
 
 -- OR domainpr0nflag

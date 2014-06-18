@@ -29,3 +29,5 @@ mahout testnb -i $OUTDIR/test-vectors -m $OUTDIR/model -l $OUTDIR/labelindex -ow
 # feed results back into pig for further aggregation
 pig -x local -p LIBS=/export/scratch2/hannes/naward03/lib -p INPUT=$OUTDIR -p OUTPUT=$OUTDIR \
 src/main/pig/combine-data.pig
+
+hadoop fs -text $OUTDIR/mapinput > $OUTDIR/map.tsv
