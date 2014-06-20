@@ -1,4 +1,5 @@
 library(rworldmap)
+library(knitr)
 
 fa <- read.table("final.tsv",sep="\t",
 	stringsAsFactors=F,header=F,quote="",col.names=c("country","dirty","count"))
@@ -24,7 +25,15 @@ dev.off()
 
 geo <- read.csv("/export/scratch2/hannes/geonames/countryInfo.txt",sep="\t",stringsAsFactors=F)[c("ISO","Country")]
 res <- merge(res,geo,by.x="country",by.y="ISO")
+names(res) <- c("CC","Clean URLs","Dirty URLs","Ratio","Country")
+res <- res[order(-res[4]),]
 print(res)
+
+res$Ratio <- paste0(round(res$Ratio*100),"%")
+res[2] <- format(res[2], big.mark = ",")
+res[3] <- format(res[3], big.mark = ",")
+table <- kable(res[c(5,2,3,4)], format = "markdown",align=c("l","r","r","r"))
+cat(table,file="ratio.markdown",sep="\n")
 
 # make a PNG for the Web
 system("convert -opaque none -fill white -density 300 -crop -0-350  kinkymap.pdf kinkymap.png")
