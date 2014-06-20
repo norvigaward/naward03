@@ -18,7 +18,7 @@ mahout seq2sparse -i $OUTDIR/trainingset -o $OUTDIR/trainingset-seq
 # split training set
 mahout split -i $OUTDIR/trainingset-seq/tfidf-vectors \
 --trainingOutput $OUTDIR/train-vectors --testOutput $OUTDIR/test-vectors \
---randomSelectionPct 40 --overwrite --sequenceFiles -xm sequential
+--randomSelectionPct 50 --overwrite --sequenceFiles -xm sequential
 
 # actually train classifier
 mahout trainnb -i $OUTDIR/train-vectors -el -li $OUTDIR/labelindex -o $OUTDIR/model -ow -c
