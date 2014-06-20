@@ -106,10 +106,13 @@ public class TopTerms {
 
 		Map<Integer, Long> topWords = getTopWords(documentFrequency, 50);
 		for (Map.Entry<Integer, Long> entry : topWords.entrySet()) {
-			System.out.println("\t" + inverseDictionary.get(entry.getKey())	+ "\t" + Math.round(entry.getValue()));
+		//	System.out.println(inverseDictionary.get(entry.getKey())	+ "\t" + Math.round(entry.getValue()));
 		}
 
 		for (int labelId = 0; labelId < model.numLabels(); labelId++) {
+			if (!labels.get(labelId).equals("porn")) {
+				continue;
+			}
 			SortedSet<WordWeight> wordWeights = new TreeSet<WordWeight>();
 			for (int wordId = 0; wordId < model.numFeatures(); wordId++) {
 				WordWeight w = new WordWeight(wordId, model.weight(labelId,
@@ -117,13 +120,15 @@ public class TopTerms {
 				wordWeights.add(w);
 			}
 			int i = 0;
+
 			for (WordWeight w : wordWeights) {
-				System.out.println( labels.get(labelId)+"\t" + inverseDictionary.get(w.getWordId())	+ "\t" + Math.round(w.getWeight()));
+				System.out.println(inverseDictionary.get(w.getWordId())	+ "\t" + Math.round(w.getWeight()));
 				i++;
-				if (i >= 50) {
+				if (i >= 500) {
 					break;
 				}
 			}
+			System.out.println();
 		}
 	}
 }
