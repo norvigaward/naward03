@@ -16,8 +16,6 @@ import org.archive.io.ArchiveReader;
 import org.archive.io.ArchiveReaderFactory;
 import org.archive.io.ArchiveRecord;
 
-import uk.bl.wa.hadoop.WritableArchiveRecord;
-
 public class ArchiveFileRecordReader extends
 		RecordReader<Text, WritableArchiveRecord> {
 

@@ -8,11 +8,11 @@ import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -32,8 +32,6 @@ import org.archive.io.ArchiveRecordHeader;
 import org.jsoup.Jsoup;
 import org.jsoup.examples.HtmlToPlainText;
 
-import uk.bl.wa.hadoop.WARCRecordUtils;
-import uk.bl.wa.hadoop.WritableArchiveRecord;
 
 public class WarcLoadFunc extends FileInputLoadFunc implements LoadMetadata {
 	private ArchiveFileRecordReader reader = null;
