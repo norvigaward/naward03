@@ -18,6 +18,19 @@
 						</goals>
 					</execution>
 				</executions>
+				<configuration>
+    <filters>
+        <filter>
+            <artifact>*:*</artifact>
+            <excludes>
+                <exclude>META-INF/*.SF</exclude>
+                <exclude>META-INF/*.DSA</exclude>
+                <exclude>META-INF/*.RSA</exclude>
+            </excludes>
+        </filter>
+    </filters>
+    <!-- Additional configuration. -->
+</configuration>
 			</plugin>
 
 			<plugin>
@@ -78,7 +91,7 @@
 
 
 	<dependencies>
-	<!-- 
+	 
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-common</artifactId>
@@ -100,7 +113,7 @@
 			<optional>true</optional>
 			<scope>compile</scope>
 		</dependency>
-
+<!--
 		<dependency>
 			<groupId>uk.bl.wa.discovery</groupId>
 			<artifactId>warc-hadoop-recordreaders</artifactId>
