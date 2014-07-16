@@ -34,6 +34,7 @@ import org.jsoup.examples.HtmlToPlainText;
 
 
 public class WarcLoadFunc extends FileInputLoadFunc implements LoadMetadata {
+	private static final int CONTENT_SIZE_LIMIT = 1024*1024; // 1M, should be enough
 	private ArchiveFileRecordReader reader = null;
 
 	@Override
@@ -118,6 +119,10 @@ public class WarcLoadFunc extends FileInputLoadFunc implements LoadMetadata {
 		// read warc payload with correct encoding
 		String content = IOUtils.toString(new InputStreamReader(WARCRecordUtils
 				.getPayload(record), cs));
+		
+		if (content.length() > CONTENT_SIZE_LIMIT) {
+			content = content.substring(0,CONTENT_SIZE_LIMIT);
+		}
 
 		Tuple t = TupleFactory.getInstance().newTuple(7);
 		t.set(0, header.getUrl());
