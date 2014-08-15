@@ -52,7 +52,10 @@ public class ApplyClassifier extends EvalFunc<String> {
 			Path dictionnaryPath) throws IOException {
 		FileSystem fs = FileSystem.get(conf);
 		Map<String, Integer> dictionnary = new HashMap<String, Integer>();
-		for (FileStatus ft : fs.listStatus(dictionnaryPath)) {
+		for (FileStatus ft : fs.globStatus(dictionnaryPath)) {
+			System.err.println("");
+			System.err.println(ft.getPath().toString());
+
 			for (Pair<Text, IntWritable> pair : new SequenceFileIterable<Text, IntWritable>(
 					ft.getPath(), true, conf)) {
 				dictionnary.put(pair.getFirst().toString(), pair.getSecond()
