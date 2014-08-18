@@ -23,7 +23,7 @@ do.call(addMapLegend, c(legenddata,legendShrink=.3,labelFontSize=.8,horizontal=F
 text(155,-65,"http://hannes.muehleisen.org",col="darkgray",pos=3,cex=.8)
 dev.off()
 
-geo <- read.csv("/export/scratch2/hannes/geonames/countryInfo.txt",sep="\t",stringsAsFactors=F)[c("ISO","Country")]
+geo <- read.csv("countryInfo.txt",sep="\t",stringsAsFactors=F)[c("ISO","Country")]
 res <- merge(res,geo,by.x="country",by.y="ISO")
 names(res) <- c("CC","Clean URLs","Dirty URLs","Ratio","Country")
 res <- res[order(-res[4]),]
