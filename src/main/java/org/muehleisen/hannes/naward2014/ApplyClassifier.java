@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.io.IntWritable;
@@ -47,11 +49,18 @@ public class ApplyClassifier extends EvalFunc<String> {
 	NaiveBayesModel model = null;
 
 	public static Map<String, Integer> readDictionnary(Configuration conf,
-			Path dictionnaryPath) {
+			Path dictionnaryPath) throws IOException {
+		FileSystem fs = FileSystem.get(conf);
 		Map<String, Integer> dictionnary = new HashMap<String, Integer>();
-		for (Pair<Text, IntWritable> pair : new SequenceFileIterable<Text, IntWritable>(
-				dictionnaryPath, true, conf)) {
-			dictionnary.put(pair.getFirst().toString(), pair.getSecond().get());
+		for (FileStatus ft : fs.globStatus(dictionnaryPath)) {
+			System.err.println("");
+			System.err.println(ft.getPath().toString());
+
+			for (Pair<Text, IntWritable> pair : new SequenceFileIterable<Text, IntWritable>(
+					ft.getPath(), true, conf)) {
+				dictionnary.put(pair.getFirst().toString(), pair.getSecond()
+						.get());
+			}
 		}
 		return dictionnary;
 	}
@@ -60,7 +69,6 @@ public class ApplyClassifier extends EvalFunc<String> {
 			Path documentFrequencyPath) {
 		Map<Integer, Long> documentFrequency = new HashMap<Integer, Long>();
 		PathFilter filter = new PathFilter() {
-
 			public boolean accept(Path arg0) {
 				return !arg0.toString().contains("_SUCCESS");
 			}

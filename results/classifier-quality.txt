@@ -1,0 +1,26 @@
+14/07/15 22:15:29 INFO test.TestNaiveBayesDriver: Complementary Results: 
+=======================================================
+Summary
+-------------------------------------------------------
+Correctly Classified Instances          :     927131	   99.8729%
+Incorrectly Classified Instances        :       1180	    0.1271%
+Total Classified Instances              :     928311
+
+=======================================================
+Confusion Matrix
+-------------------------------------------------------
+a    	b    	<--Classified as
+925841	0    	 |  925841	a     = clean
+1180 	1290 	 |  2470  	b     = porn
+
+=======================================================
+Statistics
+-------------------------------------------------------
+Kappa                                      -0.0028
+Accuracy                                   99.8729%
+Reliability                                50.7422%
+Reliability (standard deviation)            0.5002
+Weighted precision                          0.9987
+Weighted recall                             0.9987
+Weighted F1 score                           0.9985
+

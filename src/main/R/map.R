@@ -1,7 +1,7 @@
 library(rworldmap)
 library(knitr)
 
-fa <- read.table("final.tsv",sep="\t",
+fa <- read.table("map.tsv",sep="\t",
 	stringsAsFactors=F,header=F,quote="",col.names=c("country","dirty","count"))
 fa$dirty <- as.logical(fa$dirty)
 fa$dirty[is.na(fa$dirty)] <- FALSE
