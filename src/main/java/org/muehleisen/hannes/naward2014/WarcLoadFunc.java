@@ -30,7 +30,6 @@ import org.apache.pig.data.TupleFactory;
 import org.archive.io.ArchiveRecord;
 import org.archive.io.ArchiveRecordHeader;
 import org.jsoup.Jsoup;
-import org.jsoup.examples.HtmlToPlainText;
 
 
 public class WarcLoadFunc extends FileInputLoadFunc implements LoadMetadata {
@@ -131,7 +130,7 @@ public class WarcLoadFunc extends FileInputLoadFunc implements LoadMetadata {
 		t.set(3, header.getLength());
 		t.set(4, StringUtils.join(headers, "\n"));
 		t.set(5, content);
-		t.set(6, new HtmlToPlainText().getPlainText(Jsoup.parse(content)));
+		t.set(6, Jsoup.parse(content).text().replace('\t', ' '));
 		return t;
 
 	}

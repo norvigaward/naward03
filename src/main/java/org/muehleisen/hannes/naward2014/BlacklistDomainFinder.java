@@ -67,7 +67,7 @@ public class BlacklistDomainFinder extends EvalFunc<Boolean> {
 			}
 			return false;
 		} catch (Exception e) {
-			warn(e.getMessage(), PigWarning.UDF_WARNING_1);
+			warn(e.getMessage(), PigWarning.UDF_WARNING_2);
 		}
 		return false;
 	}

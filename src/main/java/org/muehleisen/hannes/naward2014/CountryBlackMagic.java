@@ -144,6 +144,7 @@ public class CountryBlackMagic extends EvalFunc<String> {
 			increment(countryVotes, cres.getCountry().getIsoCode()
 					.toUpperCase());
 		} catch (Exception e) {
+			//e.printStackTrace();
 		}
 
 		// ccTLD
@@ -156,6 +157,7 @@ public class CountryBlackMagic extends EvalFunc<String> {
 				increment(countryVotes, tld.toUpperCase());
 			}
 		} catch (Exception e) {
+			//e.printStackTrace();
 		}
 
 		// content language
@@ -170,6 +172,7 @@ public class CountryBlackMagic extends EvalFunc<String> {
 				}
 			}
 		} catch (Exception e) {
+			//e.printStackTrace();
 		}
 
 		int maxVotes = 0;

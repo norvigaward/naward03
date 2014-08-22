@@ -1,165 +1,103 @@
 package org.muehleisen.hannes.naward2014;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.StringReader;
+import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.zip.GZIPInputStream;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.PathFilter;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-import org.apache.lucene.util.Version;
-import org.apache.mahout.classifier.naivebayes.BayesUtils;
-import org.apache.mahout.classifier.naivebayes.NaiveBayesModel;
-import org.apache.mahout.classifier.naivebayes.StandardNaiveBayesClassifier;
-import org.apache.mahout.common.Pair;
-import org.apache.mahout.common.iterator.sequencefile.PathType;
-import org.apache.mahout.common.iterator.sequencefile.SequenceFileDirIterable;
-import org.apache.mahout.common.iterator.sequencefile.SequenceFileIterable;
-import org.apache.mahout.math.RandomAccessSparseVector;
-import org.apache.mahout.math.Vector;
-import org.apache.mahout.math.Vector.Element;
-import org.apache.mahout.vectorizer.TFIDF;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.PigWarning;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.impl.util.UDFContext;
-
-import com.google.common.collect.ConcurrentHashMultiset;
-import com.google.common.collect.Multiset;
 
 public class ApplyClassifier extends EvalFunc<String> {
 
-	Map<Integer, String> labels = null;
-	Map<String, Integer> dictionary = null;
-	Map<Integer, Long> documentFrequency = null;
-	@SuppressWarnings("deprecation")
-	Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_43);
-	NaiveBayesModel model = null;
-
-	public static Map<String, Integer> readDictionnary(Configuration conf,
-			Path dictionnaryPath) throws IOException {
-		FileSystem fs = FileSystem.get(conf);
-		Map<String, Integer> dictionnary = new HashMap<String, Integer>();
-		for (FileStatus ft : fs.globStatus(dictionnaryPath)) {
-			System.err.println("");
-			System.err.println(ft.getPath().toString());
-
-			for (Pair<Text, IntWritable> pair : new SequenceFileIterable<Text, IntWritable>(
-					ft.getPath(), true, conf)) {
-				dictionnary.put(pair.getFirst().toString(), pair.getSecond()
-						.get());
-			}
+	private static final List<String> classes = Arrays.asList("clean", "porn");
+	private static final Map<String, Map<String, Double>> weights = new HashMap<String, Map<String, Double>>();
+	private static final Map<String, Double> priors = new HashMap<String, Double>();
+	private static final Set<String> stopwords = new HashSet<String>();
+	
+	static {
+		for (String cl : classes) {
+			weights.put(cl, new HashMap<String, Double>());
 		}
-		return dictionnary;
-	}
-
-	public static Map<Integer, Long> readDocumentFrequency(Configuration conf,
-			Path documentFrequencyPath) {
-		Map<Integer, Long> documentFrequency = new HashMap<Integer, Long>();
-		PathFilter filter = new PathFilter() {
-			public boolean accept(Path arg0) {
-				return !arg0.toString().contains("_SUCCESS");
-			}
-		};
-		for (Pair<IntWritable, LongWritable> pair : new SequenceFileDirIterable<IntWritable, LongWritable>(
-				documentFrequencyPath, PathType.LIST, filter, conf)) {
-			documentFrequency
-					.put(pair.getFirst().get(), pair.getSecond().get());
-		}
-		return documentFrequency;
-	}
-
-	@Override
-	public String exec(Tuple input) throws IOException {
-		if (input == null || input.size() < 4)
-			return null;
 		try {
-
-			String contentPlain = (String) input.get(0);
-			String modelPath = (String) input.get(1);
-			String labelIndexPath = (String) input.get(2);
-			String dictionaryPath = (String) input.get(3);
-			String documentFrequencyPath = (String) input.get(4);
-
-			if (labels == null) {
-				Configuration c = UDFContext.getUDFContext().getJobConf();
-				model = NaiveBayesModel.materialize(new Path(modelPath), c);
-				labels = BayesUtils.readLabelIndex(c, new Path(labelIndexPath));
-				dictionary = readDictionnary(c, new Path(dictionaryPath));
-				documentFrequency = readDocumentFrequency(c, new Path(
-						documentFrequencyPath));
+			// load vocab
+			BufferedReader rdr = new BufferedReader(new InputStreamReader(
+					new GZIPInputStream(ApplyClassifier.class.getClassLoader()
+							.getResourceAsStream("vocab.tsv.gz"))));
+			String sw = null;
+			while ((sw = rdr.readLine()) != null) {
+				String[] ln = sw.split("\t");
+				String w = ln[0];
+				String c = ln[1];
+				priors.put(c, Double.parseDouble(ln[5]));
+				weights.get(c).put(w, Double.parseDouble(ln[7]));
 			}
-			Multiset<String> words = ConcurrentHashMultiset.create();
-			int documentCount = documentFrequency.get(-1).intValue();
-			// model is a matrix (wordId, labelId) => probability score
+			
+			// load stopwords
+			rdr = new BufferedReader(new InputStreamReader(
+					ApplyClassifier.class.getClassLoader()
+							.getResourceAsStream("stopword-list.txt")));
+			sw = null;
+			while ((sw = rdr.readLine()) != null) {
+				sw =sw.toLowerCase().trim();
+				if (sw.length() > 0) {
+					stopwords.add(sw);
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
-			StandardNaiveBayesClassifier classifier = new StandardNaiveBayesClassifier(
-					model);
-
-			TokenStream ts = analyzer.tokenStream("text", new StringReader(
-					contentPlain));
-			CharTermAttribute termAtt = ts
-					.addAttribute(CharTermAttribute.class);
-			ts.reset();
-			int wordCount = 0;
-			while (ts.incrementToken()) {
-				if (termAtt.length() > 0) {
-					String word = ts.getAttribute(CharTermAttribute.class)
-							.toString();
-					Integer wordId = dictionary.get(word);
-					// if the word is not in the dictionary, skip it
-					if (wordId != null) {
-						words.add(word);
-						wordCount++;
+	public String exec(Tuple input) throws IOException {
+		if (input == null || input.size() < 1)
+			return null;
+		Map<String, Double> cp = new HashMap<String, Double>();
+		for (String cl : classes) {
+			cp.put(cl, 0.0);
+		}
+		try {
+			String[] words = ((String) input.get(0)).toLowerCase().split(" ");
+			for (String word : words) {
+				word = word.trim();
+				if (word.length() < 1) {
+					continue;
+				}
+				if (stopwords.contains(word)) {
+					continue;
+				}
+				for (String cl : classes) {
+					if (weights.get(cl).containsKey(word)) {
+						//System.out.println(word+": "+weights.get(cl).get(word));
+						cp.put(cl, cp.get(cl) + weights.get(cl).get(word));
 					}
 				}
 			}
-			ts.close();
-
-			// create vector wordId => weight using tfidf
-			Vector vector = new RandomAccessSparseVector(10000);
-			TFIDF tfidf = new TFIDF();
-			for (Multiset.Entry<String> entry : words.entrySet()) {
-				String word = entry.getElement();
-				int count = entry.getCount();
-				Integer wordId = dictionary.get(word);
-				Long freq = documentFrequency.get(wordId);
-				double tfIdfValue = tfidf.calculate(count, freq.intValue(),
-						wordCount, documentCount);
-				vector.setQuick(wordId, tfIdfValue);
-			}
-			// With the classifier, we get one score for each label
-			// The label with the highest score is the one the tweet is more
-			// likely to
-			// be associated to
-			Vector resultVector = classifier.classifyFull(vector);
-			double bestScore = -Double.MAX_VALUE;
-			int bestCategoryId = -1;
-			for (Element element : resultVector.all()) {
-				int categoryId = element.index();
-				double score = element.get();
-				if (score > bestScore) {
-					bestScore = score;
-					bestCategoryId = categoryId;
+			//System.out.println(cp);
+			// now decide
+			double maxWt = Double.NEGATIVE_INFINITY;
+			String maxCl = null;
+			for (String cl : classes) {
+				double p = priors.get(cl) * cp.get(cl);
+				
+				if (p > maxWt) {
+					maxWt = p;
+					maxCl = cl;
 				}
 			}
-			return labels.get(bestCategoryId);
-
+			return maxCl;
 		} catch (Exception e) {
-			warn(e.getMessage(), PigWarning.UDF_WARNING_1);
 			e.printStackTrace();
+			warn(e.getMessage(), PigWarning.UDF_WARNING_1);
 		}
 		return null;
 	}
@@ -168,4 +106,5 @@ public class ApplyClassifier extends EvalFunc<String> {
 	public Schema outputSchema(Schema input) {
 		return new Schema(new Schema.FieldSchema(null, DataType.CHARARRAY));
 	}
+
 }
