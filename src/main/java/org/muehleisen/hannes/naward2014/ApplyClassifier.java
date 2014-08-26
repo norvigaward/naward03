@@ -38,8 +38,8 @@ public class ApplyClassifier extends EvalFunc<String> {
 				String[] ln = sw.split("\t");
 				String w = ln[0];
 				String c = ln[1];
-				priors.put(c, Double.parseDouble(ln[5]));
-				weights.get(c).put(w, Double.parseDouble(ln[7]));
+				priors.put(c, Math.log(Double.parseDouble(ln[5])));
+				weights.get(c).put(w, Math.log(Double.parseDouble(ln[7])));
 			}
 			
 			// load stopwords
@@ -63,7 +63,7 @@ public class ApplyClassifier extends EvalFunc<String> {
 			return null;
 		Map<String, Double> cp = new HashMap<String, Double>();
 		for (String cl : classes) {
-			cp.put(cl, 0.0);
+			cp.put(cl, priors.get(cl));
 		}
 		try {
 			String[] words = ((String) input.get(0)).toLowerCase().split(" ");
@@ -82,12 +82,13 @@ public class ApplyClassifier extends EvalFunc<String> {
 					}
 				}
 			}
-			//System.out.println(cp);
+			System.out.println(cp);
 			// now decide
+			
 			double maxWt = Double.NEGATIVE_INFINITY;
 			String maxCl = null;
 			for (String cl : classes) {
-				double p = priors.get(cl) * cp.get(cl);
+				double p = cp.get(cl);
 				
 				if (p > maxWt) {
 					maxWt = p;
